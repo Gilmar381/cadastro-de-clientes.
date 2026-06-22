@@ -1,0 +1,8 @@
+﻿# Banco de dados local
+*.db
+
+# Arquivos do Visual Studio
+.vs/
+bin/
+obj/
+*.user
