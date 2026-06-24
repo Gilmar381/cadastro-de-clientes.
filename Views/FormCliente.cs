@@ -1,31 +1,32 @@
 ﻿using Cadastro_de_cliente.Controllers;
 using Cadastro_de_cliente.Models;
+using Cadastro_de_cliente.Services;
+
 namespace Cadastro_de_cliente.Views
 {
     public class FormCliente : Form
     {
-        // Instância do Controller que vai cuidar das regras de negócio
         private readonly ControllerCliente _controller = new ControllerCliente();
-
-        // Guarda o Id do cliente selecionado no grid (para editar/excluir)
-        // -1 significa que nenhum cliente está selecionado (modo "novo cadastro")
         private int _idSelecionado = -1;
 
         // ===== Controles da tela =====
         private Label lblNome;
         private Label lblEmail;
         private Label lblTelefone;
+        private Label lblCep;
         private Label lblEndereco;
 
         private TextBox txtNome;
         private TextBox txtEmail;
         private MaskedTextBox txtTelefone;
+        private MaskedTextBox txtCep;
         private TextBox txtEndereco;
 
         private Button btnCadastrar;
         private Button btnEditar;
         private Button btnExcluir;
         private Button btnLimpar;
+        private Button btnBuscarCep;
 
         private DataGridView dgvClientes;
 
@@ -35,23 +36,22 @@ namespace Cadastro_de_cliente.Views
             CarregarGrid();
         }
 
-        // Monta a interface "na mão" (sem precisar do Designer)
         private void InitializeComponent()
         {
             this.Text = "Cadastro de Clientes";
             this.Width = 650;
-            this.Height = 520;
+            this.Height = 560;
             this.StartPosition = FormStartPosition.CenterScreen;
 
-            // ---------- Label + TextBox Nome ----------
+            // ---------- Nome ----------
             lblNome = new Label { Text = "Nome:", Left = 20, Top = 20, Width = 80 };
             txtNome = new TextBox { Left = 110, Top = 17, Width = 480 };
 
-            // ---------- Label + TextBox Email ----------
+            // ---------- Email ----------
             lblEmail = new Label { Text = "Email:", Left = 20, Top = 55, Width = 80 };
             txtEmail = new TextBox { Left = 110, Top = 52, Width = 480 };
 
-            // ---------- Label + MaskedTextBox Telefone ----------
+            // ---------- Telefone ----------
             lblTelefone = new Label { Text = "Telefone:", Left = 20, Top = 90, Width = 80 };
             txtTelefone = new MaskedTextBox
             {
@@ -63,30 +63,40 @@ namespace Cadastro_de_cliente.Views
                 TextMaskFormat = MaskFormat.ExcludePromptAndLiterals
             };
 
-            // ---------- Label + TextBox Endereco ----------
-            lblEndereco = new Label { Text = "Endereço:", Left = 20, Top = 125, Width = 80 };
-            txtEndereco = new TextBox { Left = 110, Top = 122, Width = 480 };
+            // ---------- CEP + Botão Buscar ----------
+            lblCep = new Label { Text = "CEP:", Left = 20, Top = 125, Width = 80 };
+            txtCep = new MaskedTextBox
+            {
+                Left = 110,
+                Top = 122,
+                Width = 100,
+                Mask = "00000-000",
+                TextMaskFormat = MaskFormat.ExcludePromptAndLiterals
+            };
+            btnBuscarCep = new Button { Text = "Buscar CEP", Left = 220, Top = 121, Width = 90, Height = 23 };
+            btnBuscarCep.Click += BtnBuscarCep_Click;
+
+            // ---------- Endereço ----------
+            lblEndereco = new Label { Text = "Endereço:", Left = 20, Top = 160, Width = 80 };
+            txtEndereco = new TextBox { Left = 110, Top = 157, Width = 480 };
 
             // ---------- Botões ----------
-            btnCadastrar = new Button { Text = "Cadastrar", Left = 110, Top = 165, Width = 110, Height = 30 };
+            btnCadastrar = new Button { Text = "Cadastrar", Left = 110, Top = 200, Width = 110, Height = 30 };
             btnCadastrar.Click += BtnCadastrar_Click;
-
-            btnEditar = new Button { Text = "Salvar Edição", Left = 230, Top = 165, Width = 110, Height = 30 };
+            btnEditar = new Button { Text = "Salvar Edição", Left = 230, Top = 200, Width = 110, Height = 30 };
             btnEditar.Click += BtnEditar_Click;
-
-            btnExcluir = new Button { Text = "Excluir", Left = 350, Top = 165, Width = 110, Height = 30 };
+            btnExcluir = new Button { Text = "Excluir", Left = 350, Top = 200, Width = 110, Height = 30 };
             btnExcluir.Click += BtnExcluir_Click;
-
-            btnLimpar = new Button { Text = "Limpar", Left = 470, Top = 165, Width = 110, Height = 30 };
+            btnLimpar = new Button { Text = "Limpar", Left = 470, Top = 200, Width = 110, Height = 30 };
             btnLimpar.Click += BtnLimpar_Click;
 
-            // ---------- Grid de clientes ----------
+            // ---------- Grid ----------
             dgvClientes = new DataGridView
             {
                 Left = 20,
-                Top = 210,
+                Top = 245,
                 Width = 590,
-                Height = 250,
+                Height = 265,
                 ReadOnly = true,
                 AllowUserToAddRows = false,
                 AllowUserToDeleteRows = false,
@@ -96,31 +106,28 @@ namespace Cadastro_de_cliente.Views
                 Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right
             };
 
-            // Colunas criadas manualmente, com larguras fixas (somam 590, sem precisar de "Fill")
             dgvClientes.Columns.Add("Id", "Id");
             dgvClientes.Columns["Id"].Width = 50;
-
             dgvClientes.Columns.Add("Nome", "Nome");
             dgvClientes.Columns["Nome"].Width = 160;
-
             dgvClientes.Columns.Add("Email", "Email");
             dgvClientes.Columns["Email"].Width = 160;
-
             dgvClientes.Columns.Add("Telefone", "Telefone");
             dgvClientes.Columns["Telefone"].Width = 110;
-
             dgvClientes.Columns.Add("Endereco", "Endereço");
             dgvClientes.Columns["Endereco"].Width = 110;
-
             dgvClientes.CellClick += DgvClientes_CellClick;
 
-            // Adiciona todos os controles ao formulário
+            // ---------- Adiciona ao form ----------
             this.Controls.Add(lblNome);
             this.Controls.Add(txtNome);
             this.Controls.Add(lblEmail);
             this.Controls.Add(txtEmail);
             this.Controls.Add(lblTelefone);
             this.Controls.Add(txtTelefone);
+            this.Controls.Add(lblCep);
+            this.Controls.Add(txtCep);
+            this.Controls.Add(btnBuscarCep);
             this.Controls.Add(lblEndereco);
             this.Controls.Add(txtEndereco);
             this.Controls.Add(btnCadastrar);
@@ -129,15 +136,33 @@ namespace Cadastro_de_cliente.Views
             this.Controls.Add(btnLimpar);
             this.Controls.Add(dgvClientes);
         }
+        private async void BtnBuscarCep_Click(object sender, EventArgs e)
+        {
+            string cep = txtCep.Text.Replace("-", "").Trim();
 
-        // ===================== EVENTOS =====================
+            if (cep.Length != 8)
+            {
+                MessageBox.Show("CEP inválido. Digite os 8 dígitos.", "Atenção",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
 
-        // Botão Cadastrar: cria um novo cliente e adiciona na lista
+            ServicoViaCep servico = new ServicoViaCep();
+            EnderecoViaCep? endereco = await servico.BuscarAsync(cep);
+
+            if (endereco == null)
+            {
+                MessageBox.Show("CEP não encontrado.", "Atenção",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            txtEndereco.Text = $"{endereco.Logradouro}, {endereco.Bairro}, {endereco.Localidade} - {endereco.Uf}";
+        }
         private void BtnCadastrar_Click(object sender, EventArgs e)
         {
             try
             {
-                
                 Cliente cliente = new Cliente(
                     txtNome.Text.Trim(),
                     txtEmail.Text.Trim(),
@@ -159,8 +184,6 @@ namespace Cadastro_de_cliente.Views
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
-
-        // Botão Salvar Edição: atualiza o cliente selecionado no grid
         private void BtnEditar_Click(object sender, EventArgs e)
         {
             if (_idSelecionado == -1)
@@ -202,8 +225,6 @@ namespace Cadastro_de_cliente.Views
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
-
-        // Botão Excluir: remove o cliente selecionado no grid
         private void BtnExcluir_Click(object sender, EventArgs e)
         {
             if (_idSelecionado == -1)
@@ -235,17 +256,13 @@ namespace Cadastro_de_cliente.Views
                 }
             }
         }
-
-        // Botão Limpar: limpa os campos e desfaz a seleção
         private void BtnLimpar_Click(object sender, EventArgs e)
         {
             LimparCampos();
         }
-
-        // Clique em uma linha do grid: carrega os dados do cliente nos campos
         private void DgvClientes_CellClick(object sender, DataGridViewCellEventArgs e)
         {
-            if (e.RowIndex < 0) return; // clique no cabeçalho, ignora
+            if (e.RowIndex < 0) return;
 
             DataGridViewRow linha = dgvClientes.Rows[e.RowIndex];
 
@@ -255,11 +272,6 @@ namespace Cadastro_de_cliente.Views
             txtTelefone.Text = linha.Cells["Telefone"].Value?.ToString();
             txtEndereco.Text = linha.Cells["Endereco"].Value?.ToString();
         }
-
-        // ===================== MÉTODOS AUXILIARES =====================
-
-        // Recarrega o grid com a lista atualizada de clientes
-        // (sem usar DataSource: limpa as linhas e adiciona uma a uma)
         private void CarregarGrid()
         {
             dgvClientes.Rows.Clear();
@@ -275,13 +287,12 @@ namespace Cadastro_de_cliente.Views
                 );
             }
         }
-
-        // Limpa os campos do formulário e desfaz a seleção do grid
         private void LimparCampos()
         {
             txtNome.Clear();
             txtEmail.Clear();
             txtTelefone.Clear();
+            txtCep.Clear();
             txtEndereco.Clear();
             _idSelecionado = -1;
             dgvClientes.ClearSelection();
