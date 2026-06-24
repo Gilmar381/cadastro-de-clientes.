@@ -1,7 +1,5 @@
 ﻿using Cadastro_de_cliente.Controllers;
 using Cadastro_de_cliente.Models;
-using System;
-using System.Windows.Forms;
 namespace Cadastro_de_cliente.Views
 {
     public class FormCliente : Form
